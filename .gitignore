@@ -1,0 +1,16 @@
+# Gradle
+.gradle/
+build/
+
+# IntelliJ
+.idea
+*.ipr
+*.iml
+*.iws
+
+# patch
+*.orig
+*.rej
+
+# Local environment
+.env

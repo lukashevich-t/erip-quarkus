@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="windows-1251">
+    <meta name="robots" content="none"/>
+    <title>cp-1251 ЕРИП</title>
+    <!--  <script type="text/javascript" src="http://code.jquery.com/jquery-2.1.4.min.js"> </script> -->
+    <link rel="stylesheet" href="jq-ui/jquery-ui.min.css">
+    <link rel="stylesheet" href="jq-timepicker/jquery.timepicker.css">
+    <script type="text/javascript" src="jq/jquery-2.1.4.js"></script>
+    <script type="text/javascript" src="jq-ui/jquery-ui.min.js"></script>
+    <script type="text/javascript" src="jq-timepicker/jquery.timepicker.min.js"></script>
+    <style>
+        table.underlined tr td {
+            border-bottom: 1px solid;
+        }
+    </style>
+</head>
+
+<body>
+<script type="text/javascript">
+    var instantSend = false;
+    var requestId;
+    var trxId;
+
+    jQuery(document).ready(function () {
+        $('#Time').timepicker({
+            'timeFormat': 'His'
+        });
+        $("#Date").datepicker({
+            //minDate : new Date(),
+            dateFormat: "yymmdd"
+        });
+        $("#acc").val("ЮЮ100314");
+        randomizeRequestId();
+        timeIsNow();
+        $('#sendButton').show();
+        $('#toggleInstantSend').attr('Checked', null);
+    });
+
+    function sendEripMessage() {
+        let form = document.getElementById("eripForm");
+        let url = $("#url").val() + "/";
+        form.action = url;
+        let result = form.submit();
+        console.log(result)
+    }
+
+    function toggleInstantSend(box) {
+        instantSend = box.checked;
+        if (instantSend) {
+            $('#sendButton').hide();
+        } else {
+            $('#sendButton').show();
+        }
+    }
+
+    function makeServiceInfo() {
+        var xml = '<?xml version="1.0" encoding="windows-1251" ?>\n' +
+            '<ServiceProvider_Request>\n' +
+            '<Version>1</Version>\n' +
+            '<RequestType>ServiceInfo</RequestType>\n' +
+            '<DateTime>%%date%%time</DateTime>\n' +
+            '<ServiceNo>%%serviceId</ServiceNo>\n' +
+            '<PersonalAccount>%%acc</PersonalAccount>\n' +
+            '<Currency>974</Currency>\n' +
+            '<RequestId>%%requestId</RequestId>\n' +
+            '<ServiceInfo>\n' +
+            '	<Agent TerminalType="11">999</Agent>\n' +
+            '	<AmountPrecision>999,12</AmountPrecision>\n' +
+            '   <Amount>\n' +
+            '      <Debt>12,22</Debt>\n' +
+            '      <Penalty/>\n' +
+            '   </Amount>\n' +
+            '   <Device Count="12">\n' +
+            '      <LastPay Idx="1">1,11</LastPay>\n' +
+            '      <LastPay Idx="2">2,22</LastPay>\n' +
+            '   </Device>\n' +
+            '</ServiceInfo>\n' +
+            '</ServiceProvider_Request>\n';
+        var ready = xml.replace("%%date", $("#Date").val())
+            .replace("%%time", $("#Time").val())
+            .replace("%%acc", $("#acc").val())
+            .replace("%%requestId", $("#requestId").val())
+            .replace("%%serviceId", $("#serviceId").val());
+        var XML = $('#XML');
+        XML.val(ready);
+        if (instantSend) {
+            sendEripMessage();
+        }
+    }
+
+    function makeStornStart() {
+        var xml = '<?xml version="1.0" encoding="windows-1251" ?>\n' +
+            '<ServiceProvider_Request>\n' +
+            '<Version>1</Version>\n' +
+            '<RequestType>StornStart</RequestType>\n' +
+            '<DateTime>%%date%%time</DateTime>\n' +
+            '<ServiceNo>%%serviceId</ServiceNo>\n' +
+            '<PersonalAccount>%%acc</PersonalAccount>\n' +
+            '<Currency>974</Currency>\n' +
+            '<RequestId>%%requestId</RequestId>\n' +
+            '<StornStart>\n' +
+            '		<TransactionId>%%TransactionId</TransactionId>\n' +
+            '		<Amount>%%sum</Amount>\n' +
+            '</StornStart>\n' +
+            '</ServiceProvider_Request>\n';
+        var ready = xml
+            .replace("%%date", $("#Date").val())
+            .replace("%%time", $("#Time").val())
+            .replace("%%acc", $("#acc").val())
+            .replace("%%sum", $("#sum").val())
+            .replace(/%%TransactionId/g, $("#trxId").val())
+            .replace("%%requestId", $("#requestId").val())
+            .replace("%%serviceId", $("#serviceId").val());
+        $('#XML').val(ready);
+        if (instantSend) {
+            sendEripMessage();
+        }
+    }
+
+
+    function makeStornResult() {
+        var xml = '<?xml version="1.0" encoding="windows-1251" ?>\n' +
+            '<ServiceProvider_Request>\n' +
+            '<Version>1</Version>\n' +
+            '<RequestType>StornResult</RequestType>\n' +
+            '<DateTime>%%date%%time</DateTime>\n' +
+            '<ServiceNo>%%serviceId</ServiceNo>\n' +
+            '<PersonalAccount>%%acc</PersonalAccount>\n' +
+            '<Currency>974</Currency>\n' +
+            '<RequestId>%%requestId</RequestId>\n' +
+            '<StornResult>\n' +
+            '		<TransactionId>%%TransactionId</TransactionId>\n' +
+            '		<Amount>%%sum</Amount>\n' +
+            '		<ServiceProvider_TrxId>%%TransactionId</ServiceProvider_TrxId>\n' +
+            '</StornResult>\n' +
+            '</ServiceProvider_Request>\n';
+        var ready = xml
+            .replace("%%date", $("#Date").val())
+            .replace("%%time", $("#Time").val())
+            .replace("%%acc", $("#acc").val())
+            .replace("%%sum", $("#sum").val())
+            .replace(/%%TransactionId/g, $("#trxId").val())
+            .replace("%%requestId", $("#requestId").val())
+            .replace("%%serviceId", $("#serviceId").val());
+        $('#XML').val(ready);
+        if (instantSend) {
+            sendEripMessage();
+        }
+    }
+
+    function makeTransactionResult() {
+        var xml = '<?xml version="1.0" encoding="windows-1251" ?>\n' +
+            '<ServiceProvider_Request>\n' +
+            '<Version>1</Version>\n' +
+            '<RequestType>TransactionResult</RequestType>\n' +
+            '<DateTime>%%date%%time</DateTime>\n' +
+            '<ServiceNo>%%serviceId</ServiceNo>\n' +
+            '<PersonalAccount>%%acc</PersonalAccount>\n' +
+            '<Currency>974</Currency>\n' +
+            '<RequestId>%%requestId</RequestId>\n' +
+            '<TransactionResult>\n' +
+            '		<TransactionId>%%TransactionId</TransactionId>\n' +
+            '		<ServiceProvider_TrxId>%%TransactionId</ServiceProvider_TrxId>\n' +
+            '</TransactionResult>\n' +
+            '</ServiceProvider_Request>\n';
+        var ready = xml
+            .replace("%%date", $("#Date").val())
+            .replace("%%time", $("#Time").val())
+            .replace("%%acc", $("#acc").val())
+            .replace(/%%TransactionId/g, $("#trxId").val())
+            .replace("%%requestId", $("#requestId").val())
+            .replace("%%serviceId", $("#serviceId").val());
+        $('#XML').val(ready);
+        if (instantSend) {
+            sendEripMessage();
+        }
+    }
+
+    function makeTransactionStart() {
+        var xml = '<?xml version="1.0" encoding="windows-1251" ?>\n' +
+            '<ServiceProvider_Request>\n' +
+            '<Version>1</Version>\n' +
+            '<RequestType>TransactionStart</RequestType>\n' +
+            '<DateTime>%%date%%time</DateTime>\n' +
+            '<ServiceNo>%%serviceId</ServiceNo>\n' +
+            '<PersonalAccount>%%acc</PersonalAccount>\n' +
+            '<Currency>974</Currency>\n' +
+            '<RequestId>%%requestId</RequestId>\n' +
+            '<TransactionStart>\n' +
+            '		<Amount>%%sum</Amount>\n' +
+            '		<TransactionId>%%TransactionId</TransactionId>\n' +
+            '		<Agent>999</Agent>\n' +
+            '		<AuthorizationType Ident="124123">EmiPay</AuthorizationType>\n' +
+            '       <Name>\n' +
+            '           <FirstName>Тимофей</FirstName>\n' +
+            '           <Patronymic>Викентьевич</Patronymic>\n' +
+            '           <Surname>Лукашевич</Surname>\n' +
+            '       </Name>\n' +
+            '</TransactionStart>\n' +
+            '</ServiceProvider_Request>\n';
+        var ready = xml
+            .replace("%%date", $("#Date").val())
+            .replace("%%time", $("#Time").val())
+            .replace("%%acc", $("#acc").val())
+            .replace("%%sum", $("#sum").val())
+            .replace(/%%TransactionId/g, $("#trxId").val())
+            .replace("%%requestId", $("#requestId").val())
+            .replace("%%serviceId", $("#serviceId").val());
+        $('#XML').val(ready);
+        if (instantSend) {
+            sendEripMessage();
+        }
+    }
+
+    function log(msg) {
+        var el = $("#logPane");
+        el.val(el.val() + "\n" + msg);
+    }
+
+    //utf8 to 1251 converter (1 byte format, RU/EN support only + any other symbols) by drgluck
+    function utf8_decode(aa) {
+        var bb = '',
+            c = 0;
+        for (var i = 0; i < aa.length; i++) {
+            c = aa.charCodeAt(i);
+            if (c > 127) {
+                if (c > 1024) {
+                    if (c == 1025) {
+                        c = 1016;
+                    } else if (c == 1105) {
+                        c = 1032;
+                    }
+                    bb += String.fromCharCode(c - 848);
+                }
+            } else {
+                bb += aa.charAt(i);
+            }
+        }
+        return bb;
+    }
+
+    function sendEripAjax(xml) {
+        $('#responseStatus').val("");
+        $('#responseView').val("");
+        log('XML=' + encodeURIComponent(xml));
+        /* log('converting params');
+         var converted_params = utf8_decode('XML=' + encodeURIComponent(xml));
+         log('creating array');
+         var send_arr = new Uint8Array(converted_params.length);
+         log('filling array, size = ' + converted_params.length);
+         for (var i = 0; i < converted_params.length; ++i) {
+         send_arr[i] = converted_params.charCodeAt(i);
+         }
+         log('array filled'); */
+        //var params = 'XML=' + encodeURIComponent(xml);
+        $
+            .ajax({
+                //url: 'http://localhost:8080/',
+                url: '/',
+                dataType: 'text',
+                type: 'POST',
+                data: 'XML=' + encodeURIComponent(xml),
+                success: function (data, status) {
+                    $('#responseView').val(data);
+                    $('#responseStatus').val(status);
+                },
+                error: function (data, status, errorThrown) {
+                    $('#responseStatus').val(status);
+                    alert('error textStatus: ' + textStatus + "\n errorThrown: " + errorThrown);
+                },
+                contentType: "application/x-www-form-urlencoded; charset=windows-1251"
+            });
+    }
+
+    function sendErip(xml) {
+        $('#responseStatus').val("");
+        $('#responseView').val("");
+        var xhr = new XMLHttpRequest();
+        var params = 'XML=' + encodeURIComponent(xml);
+        log("params");
+        log(params);
+        xhr.open("POST", '/', false);
+        //xhr.open("POST", 'http://localhost:8080/', false);
+        log("after open");
+        xhr.setRequestHeader('Content-Type',
+            'application/x-www-form-urlencoded; charset=windows-1251');
+        //xhr.setRequestHeader('Content-Type', 'multipart/form-data');
+        log("after setRequestHeader");
+        xhr.send(params);
+        log("after send");
+        $('#responseStatus').val(xhr.status);
+        $('#responseView').val(xhr.responseText);
+    }
+
+    function setServiceSum() {
+        var sum;
+        switch ($("#serviceId").val()) {
+            case "1":
+            case "4":
+            case "5":
+                sum = "9.6";
+                break;
+            case "2":
+            case "3":
+                sum = "126.0";
+                break;
+            case "6":
+                sum = "48.60";
+                break;
+            case "7":
+                sum = "6.36";
+                break;
+            case "8":
+                sum = "21.90";
+                break;
+            case "9":
+                sum = "11.88";
+                break;
+            case "10":
+                sum = "33.60";
+                break;
+            case "11":
+                sum = "8.94";
+                break;
+            case "12":
+                sum = "22.50";
+                break;
+            case "13":
+                sum = "11.20";
+                break;
+            case "14":
+                sum = "105.20";
+                break;
+            default:
+                sum = "126.0";
+                break;
+        }
+
+        $("#sum").val(sum);
+    }
+
+    function newRequest() {
+        randomizeRequestId();
+        timeIsNow();
+    }
+
+    function randomizeRequestId() {
+        if (isNaN(requestId)) {
+            requestId = new Date().getTime();
+        } else {
+            requestId++;
+        }
+        trxId = requestId;
+        $("#requestId").val(requestId);
+        $("#trxId").val(trxId);
+    }
+
+    function timeIsNow() {
+        var now = new Date();
+        var formated_date = "" + now.getFullYear() + "" + ("0" + (now.getMonth() + 1)).slice(-2) + "" + ("0" + (now.getDate())).slice(-2);
+        $("#Date").val(formated_date);
+        var formated_time = ("0" + now.getHours()).slice(-2) + ("0" + now.getMinutes()).slice(-2) + ("0" + (now.getSeconds())).slice(-2);
+        $("#Time").val(formated_time);
+    }
+
+    function randomizeTC() {
+//        var min = 100000000;
+//        var max = 999999999;
+//        $("#acc").val(
+//            Math.floor(Math.random() * (max - min + 1)) + min);
+//
+//        var letters = ['А', 'В', 'Е', 'К', 'М', 'Н', 'О', 'Р', 'С', 'Т',
+//            'Х'
+//        ];
+//        var n = letters[Math.floor(Math.random() * 11)] + letters[Math.floor(Math.random() * 11)] + letters[Math.floor(Math.random() * 11)];
+//        $("#tcSeries").val(n);
+        //jQuery.ajax("http://localhost:8080/s/gai/random", {
+        jQuery.ajax("/s/f7fcd472-dcb6-4c55-937e-f4e4352656a9/random", {
+            timeout: 3000,
+            username: "gtoby",
+            password: "l6WfxV%f%9locXFE4R",
+            success: function (data, status) {
+                $("#acc").val(data);
+            },
+            error: function (hdr, status) {
+                $("#acc").val("error");
+
+                console.log("Error");
+                console.log(hdr);
+                console.log(status);
+            }
+        })
+    }
+</script>
+<h4>ЕРИП тестовый стенд (cp-1251)</h4>
+<input type="button" value="Новый запрос" onclick="newRequest()">
+<table class="underlined">
+    <tbody>
+    <tr>
+        <td><label for="Date">DateTime:</label></td>
+        <td>
+            <input type="text" value="" id="Date"/>
+            <input type="text" value="" id="Time"/>
+        </td>
+        <td>
+            <input type="button" onclick="timeIsNow();" value="Сейчас"/>
+        </td>
+    </tr>
+    <tr>
+        <td><label for="acc">Лицевой счет:</label></td>
+        <!--<td>-->
+        <!--<input type="text" value="" id="tcSeries"/>-->
+        <!--</td>-->
+        <td>
+            <input type="text" value="OM100314" id="acc"/>
+        </td>
+        <td><input type="button" onclick="randomizeTC();" value="Случайный ТП"/></td>
+    </tr>
+    <tr>
+        <td><label for="requestId">RequestId:</label></td>
+        <td>
+            <input type="text" value="" id="requestId"/>
+        </td>
+        <td><input type="button" onclick="randomizeRequestId();" value="Следующий"/></td>
+    </tr>
+    <tr>
+        <td><label for="trxId">TransactionId:</label></td>
+        <td>
+            <input type="text" value="" id="trxId"/>
+        </td>
+        <td></td>
+    </tr>
+    <tr>
+        <td> <label for="serviceId">Услуга</label></td>
+        <td>
+            <select id="serviceId" onchange="setServiceSum();">
+                <option value="2">2 Госпошлина (юр. лица)</option>
+                <option value="3">3 Госпошлина (физ. лица и ИП)</option>
+                <option value="4">4 Разрешение (юр. лица и ИП)</option>
+                <option value="5">5 Разрешение (физ. лица)</option>
+                <option value="11">11 Перенос отметки</option>
+                <option value="12" selected>12 Техосмотр</option>
+                <option value="13">13 Перенос информации</option>
+                <option value="14">14 СТО</option>
+                <option value="51">51 Шиномонтаж</option>
+                <option value="52">52 Тахограф</option>
+            </select>
+        </td>
+        <td></td>
+    </tr>
+
+    <tr>
+        <td><label for="sum">Сумма</label></td>
+        <td>
+            <input type="number" value="126.00" id="sum" step="0.01" min="0.01"/>
+        </td>
+        <td></td>
+    </tr>
+    <tr>
+        <td><label>URL/timeout</label></td>
+        <td>
+          <input value="http://127.0.0.1:8080" id="url" />
+        </td>
+        <td>
+          <input value="0" id="timeout" type="number" />
+        </td>
+      </tr>
+    </tbody>
+</table>
+<div>
+    <h3>Send:</h3>
+    <table>
+        <tbody>
+        <tr>
+            <td>
+                <input type="button" value="ServiceInfo" onclick="makeServiceInfo();"/>
+            </td>
+            <td>
+                <input type="button" value="TransactionStart" onclick="makeTransactionStart();"/>
+            </td>
+            <td>
+                <input type="button" value="TransactionResult" onclick="makeTransactionResult();"/>
+            </td>
+            <td>
+                <input type="button" value="StornStart" onclick="makeStornStart();"/>
+            </td>
+            <td>
+                <input type="button" value="StornResult" onclick="makeStornResult();"/>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="4">
+                <input type="button" value="Послать" onclick="sendEripMessage();" id="sendButton"/>
+            </td>
+            <td>
+                <input type="checkbox" onclick="toggleInstantSend(this);" id="toggleInstantSend"> Посылать сразу
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+<br>
+<!--<form method="post" action="http://localhost:8080/" target="_blank" id="eripForm" style='display: true;'>-->
+<form method="post" action="/" target="_blank" enctype="multipart/form-data" id="eripForm" style='display: block;'>
+    <table border="1">
+        <tbody>
+        <tr>
+            <td rowspan="2">
+                <textarea name="XML" id="XML" rows="20" cols="80">ЮЯ</textarea>
+            </td>
+            <td>
+                <input type="text" id="responseStatus" readonly/>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <textarea id="responseView" cols="80" rows="18" readonly></textarea>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    <!--<input type="submit" value="Отправить">-->
+</form>
+<textarea id="logPane" cols="80" rows="38" readonly></textarea>
+
+
+<br>
+</body>
+
+</html>
